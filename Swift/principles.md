@@ -1,5 +1,9 @@
 Adopting SOLID Design Principles
 ====
+***By: Stephen Clark (Various original sources)***
+
+## The Principles
+
 **Single Responsibility Principle**:
 a class should have only a single responsibility (i.e. changes to only one part of the software's specification should be able to affect the specification of the class).
 
@@ -15,7 +19,7 @@ a class should have only a single responsibility (i.e. changes to only one part 
 **Dependency Inversion Principle**:
 one should "depend upon abstractions, [not] concretions."
 
-
+****
 ## Swift Code Examples
 
 ### Single Responsibility Principle
@@ -73,4 +77,3 @@ main()
 
 ```
 ### Open/Closed Principle
-

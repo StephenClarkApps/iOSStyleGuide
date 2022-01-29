@@ -1,5 +1,6 @@
 General Referance Guide
 ====
+***By: Stephen Clark (various original sources)***
 
 
 # Memory Management
@@ -73,7 +74,3 @@ In contrast, a weak reference means: if no other class is referencing this objec
 ## Retain / Retention Cycles
 
 What we call a reference cycle can happen if two class instances hold strong references to each other, leading to circular reference situations, where each instance is keeping the other one alive.  This scenario, in turn, can often lead to memory leaks, or they can be cascading leaks where the memory usage starts to increase exponentially whilst the app is running. We need to be breaking cycles in the code manually by using the `weak` or `unowned` modifiers.
-
-
-
-

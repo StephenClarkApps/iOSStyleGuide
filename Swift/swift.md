@@ -1,10 +1,10 @@
 
-**Swift Style Guide - City**
+**Swift Style Guide**
 ====
+***By: Stephen Clark (various original sources)***
 
 
-Table of Contents
-======
+# Table of Contents
 - [Code Formatting](#code-formatting)
 - [Naming](#naming)
 - [Coding Style](#coding-style)

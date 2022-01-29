@@ -1,3 +1,6 @@
+# Working with Tables
+***By: Stephen Clark (various original sources)***
+
 Tables are a fundamental building block of the UI within iOS and can be used for many views which may not at first glance appear to be a table. You should consider using a `UITableView` for any view controller which has the following:
 
 ### Repeating vertical elements (rows)

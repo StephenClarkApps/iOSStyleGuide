@@ -1,6 +1,8 @@
 # Working with Tables
 ***By: Stephen Clark (various original sources)***
 
+## The UIKit based Way of Doing Things
+
 Tables are a fundamental building block of the UI within iOS and can be used for many views which may not at first glance appear to be a table. You should consider using a `UITableView` for any view controller which has the following:
 
 ### Repeating vertical elements (rows)
@@ -87,3 +89,43 @@ func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> U
     }
 }
 ```
+
+## What's the SwiftUI Approach to the same thing?
+
+There are various different ways of making a list of items in SwiftUI, one of these is to use `List`.
+
+hacking with swfit has this example:
+
+```swift
+// A struct to store exactly one restaurant's data.
+struct Restaurant: Identifiable {
+    let id = UUID()
+    let name: String
+}
+
+// A view that shows the data for one Restaurant.
+struct RestaurantRow: View {
+    var restaurant: Restaurant
+
+    var body: some View {
+        Text("Come and eat at \(restaurant.name)")
+    }
+}
+
+// Create three restaurants, then show them in a list.
+struct ContentView: View {
+    let restaurants = [
+        Restaurant(name: "Joe's Original"),
+        Restaurant(name: "The Real Joe's Original"),
+        Restaurant(name: "Original Joe's")
+    ]
+
+    var body: some View {
+        List(restaurants) { restaurant in
+            RestaurantRow(restaurant: restaurant)
+        }
+    }
+}
+```
+Source: https://www.hackingwithswift.com/quick-start/swiftui/how-to-create-a-list-of-dynamic-items
+

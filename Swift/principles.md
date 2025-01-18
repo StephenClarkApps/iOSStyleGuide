@@ -1,34 +1,41 @@
-Adopting SOLID Design Principles
-====
-***By: Stephen Clark (Various original sources)***
+# Adopting SOLID Design Principles  
+**By: Stephen Clark (Various original sources)**
 
-## The Principles
+Software design can be challenging, but following the SOLID principles greatly enhances code maintainability, readability, and flexibility. SOLID is a mnemonic for five fundamental design principles that help you build robust, scalable, and loosely coupled systems. In this guide, we explain each principle, its benefits, and offer practical Swift code examples.
 
-**Single Responsibility Principle**:
-a class should have only a single responsibility (i.e. changes to only one part of the software's specification should be able to affect the specification of the class).
+---
 
-**Open/Closed Principle**:
-"software entities … should be open for extension, but closed for modification."
+## The SOLID Principles
 
-**Liskov Substitution Principle**:
-"objects in a program should be replaceable with instances of their subtypes without altering the correctness of that program."
+### 1. Single Responsibility Principle (SRP)
+A class should have **only one responsibility**—that is, only one reason to change. In practice, this means that a class should encapsulate a single part of the functionality provided by the software, avoiding mixing domain logic with ancillary concerns like persistence or UI.
 
-**Interface Segregation Principle**:
-"many client-specific interfaces are better than one general-purpose interface."
+### 2. Open/Closed Principle (OCP)
+Software entities such as classes, modules, and functions should be **open for extension but closed for modification**. This principle encourages you to design modules that can be extended to change behavior without altering the existing source code, thereby reducing the risk of introducing bugs.
 
-**Dependency Inversion Principle**:
-one should "depend upon abstractions, [not] concretions."
+### 3. Liskov Substitution Principle (LSP)
+Objects in a program should be **replaceable with instances of their subtypes** without altering the correctness of the program. In essence, if a class `S` is a subtype of class `T`, then objects of type `T` may be replaced by objects of type `S` without affecting the functionality or behavior of a program.
 
-****
+### 4. Interface Segregation Principle (ISP)
+Rather than having one large, general-purpose interface, it is better to have several smaller, client-specific interfaces. This prevents clients from depending on methods they do not use, leading to a more modular and maintainable codebase.
+
+### 5. Dependency Inversion Principle (DIP)
+High-level modules should not depend on low-level modules; both should depend on **abstractions**. By depending on protocols or abstract classes rather than concrete implementations, you allow your system to be more flexible and resilient to changes in low-level details.
+
+---
+
 ## Swift Code Examples
 
 ### Single Responsibility Principle
+
+In this example, the `Diary` class encapsulates journal functionality, while persistence is handled by a separate `Persistence` class. This separation ensures that changes in persistence logic do not affect how the journal operates.
 
 ```swift
 class Diary: CustomStringConvertible {
     var entries = [String]()
     var count = 0
 
+    // Only responsible for managing journal entries
     func addEntry(_ text: String) -> Int {
         count += 1
         entries.append("Entry \(count): \"\(text)\"")
@@ -42,51 +49,50 @@ class Diary: CustomStringConvertible {
     var description: String {
         return entries.joined(separator: "\n")
     }
-    // THE BELOW DOES NOT BELONG INSIDE THE JOURNAL
+    
+    // The following persistence methods do NOT belong inside Diary.
     func load(_ filename: String) {}
     func load(_ url: URL) {}
 }
 
-// THE BELOW CORRECTLY SEPERATES OUT PERSISTANCE FROM THE MODEL OBJECT
-// One impovement could be to make this save a generic type that conforms to a
-// protocol like Codable
+// Separate class for persistence; handles saving without polluting the Diary class.
 class Persistence {
     func saveToFile(_ journal: Diary, _ filename: String, _ overwrite: Bool = false) {
-        print("We are saving: \(journal) To file: \(filename) with Overwrite: \(overwrite)")
+        print("Saving: \(journal) to file: \(filename) with overwrite: \(overwrite)")
     }
 }
 
 func main() {
     let myJournal = Diary()
-    let _ = myJournal.addEntry("Today was AWESOME!")
-    let bike = myJournal.addEntry("I went for a bike ride.")
-
+    let firstEntry = myJournal.addEntry("Today was AWESOME!")
+    let bikeEntry = myJournal.addEntry("I went for a bike ride.")
+    
     print(myJournal)
-
-    print("remove Entry \"bike\"")
-    myJournal.removeEntry(bike)
-
+    
+    print("Removing the bike entry")
+    myJournal.removeEntry(bikeEntry)
+    
     print(myJournal)
-
-    let p = Persistence()
+    
+    let persistence = Persistence()
     let filename = "/mnt/c/something"
-    p.saveToFile(myJournal, filename, false)
+    persistence.saveToFile(myJournal, filename, false)
 }
 
 main()
-
 ```
+
 ### Open/Closed Principle
 
-```swift
-// Open/Closed Principle Example
+In this example, we define a protocol `Shape` and provide concrete implementations like `Circle` and `Square`. The function `calculateTotalArea` works on an array of shapes and does not need to be modified when adding new shapes.
 
-// Protocol defining the shape
+```swift
+// Protocol defining the interface for shapes
 protocol Shape {
     func area() -> Double
 }
 
-// Concrete implementation of a Circle
+// Concrete implementation of a circle
 class Circle: Shape {
     let radius: Double
 
@@ -99,7 +105,7 @@ class Circle: Shape {
     }
 }
 
-// Concrete implementation of a Square
+// Concrete implementation of a square
 class Square: Shape {
     let side: Double
 
@@ -112,44 +118,40 @@ class Square: Shape {
     }
 }
 
-// Function to calculate total area of shapes
+// Function to calculate the total area of all shapes without changing its code
 func calculateTotalArea(_ shapes: [Shape]) -> Double {
-    var totalArea = 0.0
-    for shape in shapes {
-        totalArea += shape.area()
-    }
-    return totalArea
+    shapes.reduce(0.0) { $0 + $1.area() }
 }
 
 // Usage example
 let shapes: [Shape] = [Circle(radius: 5.0), Square(side: 4.0)]
 let totalArea = calculateTotalArea(shapes)
 print("Total area: \(totalArea)")
-
 ```
-This example demonstrates the Open/Closed Principle by allowing for extension (new shapes can be added) without modifying existing code (the calculateTotalArea function).
+
+This example demonstrates how new shapes can be added without modifying existing code, ensuring the software remains open for extension but closed for modification.
 
 ### Liskov Substitution Principle
 
-```swift
-// Liskov Substitution Principle Example
+Here, we illustrate the Liskov Substitution Principle with a simple `Bird` protocol. Even though an `Ostrich` is a bird that can’t fly, the function works correctly because each subtype implements the protocol. (Note: In real-world scenarios, you might split birds into flying and non-flying categories to avoid design issues.)
 
-// Protocol defining the behavior of a Bird
+```swift
+// Protocol defining the behavior of a bird
 protocol Bird {
     func fly()
 }
 
-// Concrete implementation of a Sparrow conforming to Bird
+// Sparrow can fly
 class Sparrow: Bird {
     func fly() {
         print("Sparrow flying")
     }
 }
 
-// Concrete implementation of an Ostrich conforming to Bird
+// Ostrich, although a bird, does not fly
 class Ostrich: Bird {
     func fly() {
-        // Ostriches cannot fly, so this method does nothing
+        // Ostriches cannot fly
     }
 }
 
@@ -163,40 +165,39 @@ let sparrow = Sparrow()
 let ostrich = Ostrich()
 
 makeBirdFly(sparrow) // Outputs: Sparrow flying
-makeBirdFly(ostrich) // Outputs: (nothing, as ostriches cannot fly)
-
+makeBirdFly(ostrich) // Outputs nothing because ostrich cannot fly
 ```
-In this example, the makeBirdFly function accepts any type conforming to the Bird protocol. It demonstrates the Liskov Substitution Principle by allowing instances of concrete bird types (Sparrow and Ostrich) to be passed in interchangeably without altering the correctness of the program, even though ostriches cannot fly.
 
+This example shows that subtypes (like `Ostrich`) can substitute their base type without breaking program correctness, aligning with Liskov's principle.
 
 ### Interface Segregation Principle
 
-```swift
-// Interface Segregation Principle Example
+Instead of one bloated interface, we define multiple small, specific protocols: `Worker`, `Eater`, and `Sleeper`. Clients only implement what they need.
 
-// Protocol defining the behavior of a Worker
+```swift
+// Protocol for work-related behavior
 protocol Worker {
     func work()
 }
 
-// Protocol defining the behavior of a Eater
+// Protocol for eating behavior
 protocol Eater {
     func eat()
 }
 
-// Protocol defining the behavior of a Sleeper
+// Protocol for sleeping behavior
 protocol Sleeper {
     func sleep()
 }
 
-// Concrete implementation of a RobotWorker conforming to Worker
+// Robot only needs to work, so it conforms solely to Worker
 class RobotWorker: Worker {
     func work() {
         print("Robot working")
     }
 }
 
-// Concrete implementation of a HumanWorker conforming to Worker and Eater
+// Human may need to work and eat
 class HumanWorker: Worker, Eater {
     func work() {
         print("Human working")
@@ -207,7 +208,7 @@ class HumanWorker: Worker, Eater {
     }
 }
 
-// Concrete implementation of a HumanSleeper conforming to Worker and Sleeper
+// Another human class that works and sleeps
 class HumanSleeper: Worker, Sleeper {
     func work() {
         print("Human working")
@@ -220,59 +221,47 @@ class HumanSleeper: Worker, Sleeper {
 
 // Usage example
 let robot = RobotWorker()
-let human = HumanWorker()
+let humanWorker = HumanWorker()
 
-robot.work() // Outputs: Robot working
-human.work() // Outputs: Human working
-human.eat()  // Outputs: Human eating
+robot.work()   // Outputs: Robot working
+humanWorker.work() // Outputs: Human working
+humanWorker.eat()  // Outputs: Human eating
 ```
 
-This example demonstrates the Interface Segregation Principle by avoiding a single general-purpose interface for workers and instead providing separate interfaces (Worker, Eater, Sleeper) that clients can use individually based on their specific needs. This way, clients don't need to implement or depend on methods they don't use.
-
+This design avoids forcing classes to implement methods they don't need, leading to cleaner and more maintainable code.
 
 ### Dependency Inversion Principle
 
-Do you DIP? ... Let's find out.
-
-The Dependency Inversion Principle (DIP) is a design principle in object-oriented programming that helps to make software modules more reusable and maintainable.
-
-
-Think of it like this: instead of your coffee machine (high-level module) needing to know how to grow, harvest, grind, and brew coffee beans (low-level modules), it just needs to know about the concept of 'coffee' (the abstraction). This way, if you want to change how your coffee is made, you can do so without having to buy a new coffee machine¹. This principle makes your code more flexible and easier to manage.
-
-**Swift:**
-In Swift, the Dependency Inversion Principle is about creating a level of abstraction between modules through protocols. High-level modules, like a view controller, should not depend directly on low-level things, like a networking component. Instead, it should depend on abstractions or in Swift term, protocol⁶. This allows you to switch out dependencies without changing the high-level module.
-
-**Objective-C:**
-In Objective-C, the Dependency Inversion Principle is similar but uses a different mechanism for abstraction. High-level modules should not depend on low-level modules. Both should depend on abstractions. Objective-C also uses abstract classes as a form of abstraction. An abstract class in Objective-C is a class that declares but doesn’t fully implement its methods. Subclasses of this abstract class are expected to provide the implementation. This is another way to achieve dependency inversion: the high-level module depends on the abstract class, not the concrete subclass.By using these, you can invert the dependencies in your code, making high-level modules independent of the low-level module implementation details.
+The Dependency Inversion Principle is all about inverting dependencies: high-level modules depend on abstractions (protocols) rather than on low-level module details. In the following example, a `CoffeeMachine` class depends on a `Coffee` protocol, allowing different types of coffee (e.g., `Arabica` or `Robusta`) to be injected as needed without modifying the machine.
 
 ```swift
-
-// The 'Coffee' protocol represents the abstraction of coffee
+// The 'Coffee' protocol represents the abstraction for coffee preparation
 protocol Coffee {
     func prepare() -> String
 }
 
-// 'Arabica' and 'Robusta' are concrete implementations (low-level modules) of the 'Coffee' protocol
+// Concrete implementation for Arabica coffee
 class Arabica: Coffee {
     func prepare() -> String {
-        let growing = "Growing Arabica coffee: Arabica coffee is typically grown in high altitudes with a mild climate and rich soil."
-        let harvesting = "Harvesting Arabica coffee: The coffee cherries are hand-picked when they are perfectly ripe."
-        let processing = "Processing Arabica coffee: The cherries are processed either by the dry method (sun-drying) or the wet method (removing the pulp and drying the beans)."
-        let roasting = "Roasting Arabica coffee: The green coffee beans are roasted at a temperature of about 200°C until they reach a rich, dark brown color."
-        let grinding = "Grinding Arabica coffee: The roasted beans are ground to a consistency similar to sea salt for a balanced extraction."
-        let shipping = "Shipping Arabica coffee: The brewed coffee is packaged and shipped to coffee shops and stores around the world."
+        let growing = "Growing Arabica: Typically grown in high altitudes with a mild climate."
+        let harvesting = "Harvesting Arabica: Hand-picking cherries when perfectly ripe."
+        let processing = "Processing Arabica: Cherries are either sun-dried (dry method) or pulped and dried (wet method)."
+        let roasting = "Roasting Arabica: Beans roasted at around 200°C until dark brown."
+        let grinding = "Grinding Arabica: Roasted beans ground to a consistency similar to sea salt."
+        let shipping = "Shipping Arabica: Packaged and shipped globally."
         
         return "\(growing)\n\(harvesting)\n\(processing)\n\(roasting)\n\(grinding)\n\(shipping)"
     }
 }
 
+// Concrete implementation for Robusta coffee
 class Robusta: Coffee {
     func prepare() -> String {
         return "Preparing Robusta coffee..."
     }
 }
 
-// 'CoffeeMachine' is a high-level module that depends on the 'Coffee' abstraction
+// High-level module that depends on the Coffee abstraction
 class CoffeeMachine {
     var coffee: Coffee
     
@@ -285,17 +274,30 @@ class CoffeeMachine {
     }
 }
 
-// Usage example
+// Usage example:
 let arabica = Arabica()
 let robusta = Robusta()
 
 let coffeeMachine = CoffeeMachine(coffee: arabica)
 coffeeMachine.getCoffee()
 
-// Changing the coffee type without buying a new coffee machine
+// Switching coffee type without modifying CoffeeMachine's code
 coffeeMachine.coffee = robusta
 coffeeMachine.getCoffee()
-
-
-
 ```
+
+The above code illustrates how high-level modules (the coffee machine) rely on the `Coffee` protocol—an abstraction—so that the underlying coffee implementation can change dynamically, improving flexibility and maintainability.
+
+---
+
+## Conclusion
+
+By adopting SOLID design principles, you ensure that your codebase remains:
+
+- **Modular** and easier to understand (SRP).
+- **Extendable** without modifying existing code (OCP).
+- **Consistent** and reliable when substituting implementations (LSP).
+- **Tailored** to specific client needs without unnecessary dependencies (ISP).
+- **Flexible** by decoupling high-level and low-level modules (DIP).
+
+These principles not only improve the quality of your code but also make it easier to test, maintain, and extend over time. Happy coding!

@@ -45,7 +45,7 @@ This guide is influenced by Apple’s documentation and several reputable source
 25. [CGGeometry & CGRect Functions](#cggeometry)
 26. [String Replacement](#string-replacement)
 27. [Commenting](#commenting)
-28. [Fonts, Colours, File Management, and General Practices](#general)
+28. [Fonts, Colours, File Management, and General Practices](#fonts)
 29. [Spacing and Indentation](#spacing)
 30. [Conditionals and Ternary Operator](#conditionals--ternary-operator)
 31. [Error Handling](#error-handling)

@@ -1,69 +1,187 @@
-# Objective C
+# Objective-C Best Practices
 
-### Do you know how to use the dot syntax?
-`self.myArray.count` not `[self.myArray count]` etc
+This guide covers several common Objective-C patterns and best practices—from using dot syntax to managing notifications, singleton instances, and differentiating between instance and class methods.
 
-### Do you know how to identify if you are running on a phone or pad?
-`UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone` and `UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad`
+---
 
-### Do you know the difference between interface orientation and device orientation?
-The interface orientation determines the orientation of the UI on the screen and can be either `UIInterfaceOrientationPortrait` or `UIInterfaceOrientationLanscape(Left|Right)`. The device orientation on the other hand has no bearing on the rendered UI and can indicate landscape, portrait, upside down, face up, face down or unknown. For this reason it is almost always `UIInterfaceOrientation` that we need to check when making UI decisions. This can be identified with `UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)` or `UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)`
+## Dot Syntax vs. Message Syntax
 
-### Do you know how to add a listener to notification centre?
-There are two methods, one is to add a listener that calls a method, the other calls a block:<br/>
-```objective-c
-[[NSNotificationCenter defaultCenter] addObserverForName:CityAnalyticsDeviceIDDidChangeNotification
-                                                  object:nil
-                                                   queue:nil
-                                              usingBlock:^(NSNotification * _Nonnull note) {
-                                                  [self cityAnalyticsDeviceIDChanged];
-                                              }];
-[[NSNotificationCenter defaultCenter] addObserver:self
-                                         selector:@selector(keyboardWillShow:)
-                                             name:UIKeyboardWillShowNotification
-                                           object:nil];
-```
+- **Dot Syntax:**  
+  Use dot syntax for properties, e.g.,  
+  ```objc
+  self.myArray.count
+  ```  
+- **Message Syntax:**  
+  Use the traditional bracket syntax for method calls, e.g.,  
+  ```objc
+  [self.myArray count]
+  ```
 
-### Do you know how to remove a listener from notification centre?
-To remove observers there are a couple of options:<br/>
-```objective-c
-//Remove all observers for a given class
-[[NSNotificationCenter defaultCenter] removeObserver:self];
-//Remove a single observer
-[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                name:UIApplicationDidBecomeActiveNotification
+Dot syntax is generally preferred for property access, making your code more concise and readable.
+
+---
+
+## Checking the Device Type
+
+To determine whether your app is running on an iPhone or iPad, use the `UI_USER_INTERFACE_IDIOM()` macro:
+
+- **iPhone:**
+  ```objc
+  UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone
+  ```
+- **iPad:**
+  ```objc
+  UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad
+  ```
+
+This allows you to tailor your UI logic based on the device type.
+
+---
+
+## Interface Orientation vs. Device Orientation
+
+- **Interface Orientation:**  
+  Determines the current layout of the UI on the screen. It can be:
+  - `UIInterfaceOrientationPortrait`
+  - `UIInterfaceOrientationLandscapeLeft` or `UIInterfaceOrientationLandscapeRight`
+  
+  Check it using:
+  ```objc
+  UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)
+  UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)
+  ```
+
+- **Device Orientation:**  
+  Indicates how the physical device is oriented (portrait, landscape, upside down, face up, face down, or unknown). This value does not directly affect the UI.
+
+For most UI decisions, **interface orientation** is what you want to check.
+
+---
+
+## Notification Center: Adding Observers
+
+There are two common approaches for adding observers with `NSNotificationCenter`:
+
+1. **Block-Based Listener:**
+   ```objc
+   [[NSNotificationCenter defaultCenter] addObserverForName:CityAnalyticsDeviceIDDidChangeNotification
+                                                     object:nil
+                                                      queue:nil
+                                                 usingBlock:^(NSNotification * _Nonnull note) {
+       [self cityAnalyticsDeviceIDChanged];
+   }];
+   ```
+
+2. **Selector-Based Listener:**
+   ```objc
+   [[NSNotificationCenter defaultCenter] addObserver:self
+                                            selector:@selector(keyboardWillShow:)
+                                                name:UIKeyboardWillShowNotification
                                               object:nil];
-//Remove block based observer
-self.initialSettingsLoadedObserver = [[NSNotificationCenter defaultCenter] addObserverForName:kSettingsLoaded
-                                                                                           object:nil
-                                                                                            queue:nil
-                                                                                       usingBlock:^(NSNotification * _Nonnull note) {
-                                                                                           [[NSNotificationCenter defaultCenter] removeObserver:self.initialSettingsLoadedObserver];
-                                                                                           weakSelf.initialSettingsLoadedObserver = nil;
-                                                                                           //Your code goes here
-                                                                                       }];
-```
+   ```
 
-### How to define a singleton / shared instance
-```objective-c
+Choose the method that best fits your use case. Block-based listeners allow for inline handling, while selector-based observers are more traditional.
+
+---
+
+## Notification Center: Removing Observers
+
+To avoid unexpected behavior or memory leaks, remove observers appropriately:
+
+- **Remove All Observers for a Given Object:**
+  ```objc
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  ```
+
+- **Remove a Specific Observer:**
+  ```objc
+  [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:UIApplicationDidBecomeActiveNotification
+                                                object:nil];
+  ```
+
+- **Remove Block-Based Observer:**
+  If you stored the observer token (e.g., in `self.initialSettingsLoadedObserver`), remove it like so:
+  ```objc
+  self.initialSettingsLoadedObserver = [[NSNotificationCenter defaultCenter] addObserverForName:kSettingsLoaded
+                                                                                             object:nil
+                                                                                              queue:nil
+                                                                                         usingBlock:^(NSNotification * _Nonnull note) {
+      [[NSNotificationCenter defaultCenter] removeObserver:self.initialSettingsLoadedObserver];
+      weakSelf.initialSettingsLoadedObserver = nil;
+      // Your code goes here
+  }];
+  ```
+
+---
+
+## Defining a Singleton / Shared Instance
+
+A common pattern for singletons in Objective-C uses `dispatch_once` to ensure a single instance is created:
+
+```objc
 + (NNStyleManager *)sharedInstance {
-    static dispatch_once_t pred;
-    static CTStyleManager *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    static NNStyleManager *sharedInstance = nil;
     
-    dispatch_once(&pred, ^{
-        sharedInstance = [CTStyleManager new];
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [NNStyleManager new];
     });
     
     return sharedInstance;
 }
 ```
 
-### When to use self vs weakSelf?
-For any code that will run in a completion block **it is advisable to create a weak reference to self and use that within the block**. This way you are not adding to the retain count of the object and will handle a situation where the object may have been dealloc'd by the time the block executes. There are some exceptions such as the app delegate and singletons which will be in memory for the duration of the app lifecycle.
+This method guarantees that `sharedInstance` is instantiated only once and is thread-safe.
 
-### Do you know the difference between an instance and a class method?
-Instance methods (work on individual instances of classes) and are defined with a minus i.e `- (void)myInstanceMethod {` and class methods are defined with a plus `+ (void)myClassMethod {`. 
+---
 
-The class method can simply be called `[MyClass myClassMethod]` with no need to instantiate an instance of the class, where as the instance method would be something like `MyClass *class = [MyClass new]; [class myInstanceMethod];`. 
+## When to Use `self` vs. `weakSelf`
 
-Another important difference is that a class method does not have any instance properties and therefore cannot use `self`.
+- **`self`:**  
+  Use when there is no risk of causing a retain cycle—typically in synchronous code or when the object is guaranteed to persist (e.g., the app delegate or singleton).
+
+- **`weakSelf`:**  
+  Use inside completion blocks to avoid increasing the object's retain count. This avoids potential memory leaks if the object might have been deallocated by the time the block executes. For example:
+  
+  ```objc
+  __weak typeof(self) weakSelf = self;
+  [someObject performActionWithCompletion:^{
+      [weakSelf doSomething];
+  }];
+  ```
+
+---
+
+## Instance Methods vs. Class Methods
+
+- **Instance Methods:**  
+  Operate on individual instances of a class. They are defined with a minus (`-`) sign:
+  ```objc
+  - (void)myInstanceMethod {
+      // Instance-specific code here
+  }
+  ```
+  Example usage:
+  ```objc
+  MyClass *instance = [MyClass new];
+  [instance myInstanceMethod];
+  ```
+
+- **Class Methods:**  
+  Operate on the class itself and do not require an instance. They are defined with a plus (`+`) sign:
+  ```objc
+  + (void)myClassMethod {
+      // Code that applies to the class as a whole
+  }
+  ```
+  Example usage:
+  ```objc
+  [MyClass myClassMethod];
+  ```
+
+Remember that class methods have no access to instance properties or instance-specific data because they are not tied to any particular object.
+
+---
+
+By following these best practices, you can write cleaner, more maintainable Objective-C code that leverages the language's conventions and built-in functionalities effectively. Happy coding!

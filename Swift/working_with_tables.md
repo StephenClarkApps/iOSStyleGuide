@@ -1,29 +1,32 @@
-# Working with Tables
-***By: Stephen Clark (various original sources)***
+# Working with Tables  
+**By: Stephen Clark (various original sources)**
 
-## The UIKit based Way of Doing Things
+When building iOS apps, tables are one of the fundamental building blocks for constructing user interfaces. Whether you're displaying lists, forms, or grouped data, tables provide a robust, flexible solution. This guide will walk you through the UIKit-based approach and how you can achieve similar functionality in SwiftUI.
 
-Tables are a fundamental building block of the UI within iOS and can be used for many views which may not at first glance appear to be a table. You should consider using a `UITableView` for any view controller which has the following:
+---
 
-### Repeating vertical elements (rows)
+## The UIKit-Based Approach
 
-If you have the same or similar UI elements repeated vertically then these naturally lend themselves to being a `UITableViewCell`
+### Why Use a `UITableView`?
 
-### Vertical elements that are to be included / excluded in certain circumstances
+A `UITableView` is highly versatile and should be considered whenever your view controller needs to handle any of the following scenarios:
 
-When you have vertical blocks of UI which may or may not display based on certain criteria, it's far easier to build these as `UITableViewCells` and include / exclude them rather than attempting to have the UI in a `UIView` with a complex set of constraints that are enabled / disabled or have varying priorities.
+1. **Repeating Vertical Elements:**  
+   If your view contains vertically repeating UI elements—such as lists of items or rows of information—each element can naturally map to a `UITableViewCell`. This simplifies both design and code, since each cell is responsible for its content.
 
-### Where scrolling is required
+2. **Conditional Display of Vertical Elements:**  
+   Often, you might have UI blocks that should only be visible under certain conditions. Using a `UITableViewCell` for each block simplifies the process, as you can easily include or exclude cells (or even whole sections) without having to manipulate a complex layout of views and constraints.
 
-`UITableViews` naturally support scrolling and are capable of calculating their own content size. If you create a `UIScrollView` an add subviews then you need to help the system identify the height of the content and this can often be more complex.
+3. **Automatic Scrolling:**  
+   `UITableView` inherently supports scrolling and calculates its own content size. In contrast, using a `UIScrollView` with manually added subviews often requires extra work to determine the correct content size dynamically, especially when the views have varying dimensions.
 
-Identifying What Elements to Render
-======
+### Identifying What Elements to Render
 
-When working with tables that contain different cell types or sections, the best approach is to define `enum` values for each section / cell type and then use an array to build up the sequence that these should be displayed in. That way you only have to calculate the order of elements once, and then when you are returning the various cells / headers etc you can just refer to the enum value. The following outlines the steps needed. This can apply to either sections or rows, in the example below it's applied to a table with a single section a multiple rows:
+When your table includes different cell types or multiple sections, managing the layout becomes more structured by using `enum` values. This approach helps in determining which cells to display, in what order, and under which conditions—reducing repeated calculations and potential errors. Here's an example of how you could model a table that displays different payment card details:
 
-Define your `enum`
-------
+#### 1. Define Your Cell Types
+
+Create an enumeration that represents each type of cell that your table could display:
 
 ```swift
 enum NRICardDetailsCellType: Int {
@@ -35,10 +38,9 @@ enum NRICardDetailsCellType: Int {
 }
 ```
 
-Calculate which rows to display
-------
+#### 2. Calculate Which Rows to Display
 
-Based on whatever criteria is applicable create an array of the `enum` values based on the sequence you want to render the cells:
+Based on your application logic, create an array of these enum values in the order you want the cells to appear. For example, you might want to display different rows depending on whether a card is already saved:
 
 ```swift
 func calculateRows() {
@@ -50,60 +52,64 @@ func calculateRows() {
 }
 ```
 
-Identifying the number of rows/sections to return
-------
+#### 3. Return the Number of Rows or Sections
 
-Depending on whether you are working with sections or rows use one of the following:
+Depending on whether your table is divided into sections or simply rows, return the appropriate count:
 
 ```swift
+// For rows in a single section:
 func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     return self.rows.count
 }
-```
 
-or
-
-```swift
+// For multiple sections:
 func numberOfSections(in tableView: UITableView) -> Int {
     return self.sections.count
 }
 ```
 
-Return the correct `UITableViewCell`
-------
+#### 4. Return the Correct `UITableViewCell`
+
+Implement the data source method to dequeue and configure cells based on your enum sequence. Using a switch statement makes it straightforward to determine which cell to return:
 
 ```swift
 func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     let row = self.rows[indexPath.row]
     switch row {
     case .expiryDate:
-        // Return expiry cell
+        // Dequeue and configure the expiry date cell
     case .cvv:
-        // Return cvv cell
+        // Dequeue and configure the CVV cell
     case .scanCard:
-        // Return scan cell
+        // Dequeue and configure the scan card cell
     case .cardNumber:
-        // Return card number cell
+        // Dequeue and configure the card number cell
     case .saveData:
-        // Return save cell
+        // Dequeue and configure the save data cell
     }
 }
 ```
 
-## What's the SwiftUI Approach to the same thing?
+This modular approach makes your table view dynamic and easy to update. You define the sequence once and then reuse it throughout your table view data source methods.
 
-There are various different ways of making a list of items in SwiftUI, one of these is to use `List`.
+---
 
-hacking with swfit has this example:
+## The SwiftUI Approach
+
+SwiftUI provides a different paradigm for building lists and dynamic interfaces, emphasizing a declarative style. One of the most straightforward ways to create a list in SwiftUI is by using the `List` view.
+
+### Example: Creating a Dynamic List in SwiftUI
+
+Consider an app that displays a list of restaurants. Each restaurant’s details are encapsulated in a model, and a row view is defined for presenting each restaurant’s information.
 
 ```swift
-// A struct to store exactly one restaurant's data.
+// A struct to store each restaurant’s data.
 struct Restaurant: Identifiable {
     let id = UUID()
     let name: String
 }
 
-// A view that shows the data for one Restaurant.
+// A view that displays the information for one Restaurant.
 struct RestaurantRow: View {
     var restaurant: Restaurant
 
@@ -112,7 +118,7 @@ struct RestaurantRow: View {
     }
 }
 
-// Create three restaurants, then show them in a list.
+// The main view that presents a list of restaurants.
 struct ContentView: View {
     let restaurants = [
         Restaurant(name: "Joe's Original"),
@@ -127,5 +133,36 @@ struct ContentView: View {
     }
 }
 ```
-Source: https://www.hackingwithswift.com/quick-start/swiftui/how-to-create-a-list-of-dynamic-items
 
+#### What's Happening Here?
+
+- **Data Modeling:**  
+  The `Restaurant` struct conforms to `Identifiable`, which SwiftUI uses to uniquely identify each item in the list.
+  
+- **Row View:**  
+  The `RestaurantRow` view is a reusable component that takes a `Restaurant` instance and displays its content.
+  
+- **List Construction:**  
+  In `ContentView`, the `List` view is created by passing the array of restaurants. SwiftUI automatically iterates over the array and instantiates a `RestaurantRow` for each item.
+
+### Advantages of SwiftUI Lists
+
+- **Declarative Syntax:**  
+  Lists in SwiftUI are defined using a simple, declarative syntax that makes the intent of your UI clear.
+  
+- **Automatic Updates:**  
+  SwiftUI monitors your data and automatically updates the UI when your data changes.
+
+- **Integration with State:**  
+  SwiftUI effortlessly integrates with state management, so dynamic content and interactions become straightforward.
+
+---
+
+## Conclusion
+
+Both UIKit and SwiftUI offer robust ways to work with tables and lists, each with their own strengths:
+
+- **UIKit** is flexible and highly customizable, especially suited to complex layouts where individual control over cell reuse, animations, and interface behavior is needed.
+- **SwiftUI** offers a concise, declarative approach, making it easier to express dynamic content with less boilerplate code.
+
+By understanding these approaches, you can choose the one that best fits your application’s needs or even mix both in a transitional project. Happy coding!
